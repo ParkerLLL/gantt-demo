@@ -1,0 +1,15 @@
+Desktop
+Documents
+Downloads
+IdeaProjects
+Library
+Movies
+Music
+Pictures
+Public
+PycharmProjects
+Untitled.ipynb
+Untitled1.ipynb
+abc.txt
+lesson 2.ipynb
+opt
