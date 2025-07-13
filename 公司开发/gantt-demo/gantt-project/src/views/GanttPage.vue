@@ -30,7 +30,13 @@
           {{ viewType === 'iteration' ? '当前视图：人员 → 版本迭代' : '当前视图：人员 → 需求 → 任务' }}
         </a-tag>
         <a-tag v-if="ganttStore.ganttTasks.length > 0" color="green">
-          数据项: {{ ganttStore.ganttTasks.length }}
+          总数据: {{ ganttStore.ganttTasks.length }}
+        </a-tag>
+        <a-tag v-if="ganttStore.filteredTasks.length !== ganttStore.ganttTasks.length" color="orange">
+          筛选后: {{ ganttStore.filteredTasks.length }}
+        </a-tag>
+        <a-tag v-if="filterStore.hasActiveFilters" color="red">
+          {{ filterStore.activeFilterCount }} 个筛选条件
         </a-tag>
       </div>
       
@@ -102,6 +108,9 @@ const refreshData = async () => {
     
     // 设置原始数据，这会触发数据转换
     ganttStore.setRawData(testData)
+    
+    // 更新筛选选项
+    filterStore.updateOptionsFromData(testData)
     
     // 确保视图类型与store同步
     if (config.value.viewType !== viewType.value) {

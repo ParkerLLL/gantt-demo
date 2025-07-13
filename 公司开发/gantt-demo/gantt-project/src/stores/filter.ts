@@ -91,6 +91,42 @@ export const useFilterStore = defineStore('filter', () => {
     )
   }
 
+  // 基于真实数据更新筛选选项
+  const updateOptionsFromData = (data: { iterations: any[], requirements: any[] }) => {
+    // 提取版本迭代选项
+    const iterationSet = new Set<string>()
+    const personSet = new Set<string>()
+    
+    data.iterations.forEach(iteration => {
+      iterationSet.add(iteration.name)
+      personSet.add(iteration.personId)
+    })
+    
+    data.requirements.forEach(requirement => {
+      if (requirement.iterationName) {
+        iterationSet.add(requirement.iterationName)
+      }
+      personSet.add(requirement.personId)
+    })
+    
+    // 更新版本迭代选项
+    options.value.iterations = Array.from(iterationSet).map(name => ({
+      label: name,
+      value: name
+    }))
+    
+    // 更新人员选项
+    options.value.persons = Array.from(personSet).map(personId => ({
+      label: personId, // 这里可以后续优化为实际姓名
+      value: personId
+    }))
+    
+    console.log('筛选选项已更新:', {
+      iterations: options.value.iterations.length,
+      persons: options.value.persons.length
+    })
+  }
+
   // 构建筛选查询参数
   const buildQueryParams = () => {
     const params: Record<string, any> = {}
@@ -122,6 +158,7 @@ export const useFilterStore = defineStore('filter', () => {
     clearAllFilters,
     setOptions,
     getFilteredOptions,
-    buildQueryParams
+    buildQueryParams,
+    updateOptionsFromData
   }
 })

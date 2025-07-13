@@ -12,7 +12,7 @@ import { storeToRefs } from 'pinia'
 
 const ganttContainer = ref<HTMLElement>()
 const ganttStore = useGanttStore()
-const { config, ganttTasks } = storeToRefs(ganttStore)
+const { config, ganttTasks, filteredTasks } = storeToRefs(ganttStore)
 const isInitialized = ref(false)
 
 // 简单的测试数据
@@ -151,14 +151,21 @@ onMounted(() => {
         // 初始化
         gantt.init(ganttContainer.value)
         
-        // 优先使用store数据，如果没有则使用测试数据
-        if (ganttTasks.value && ganttTasks.value.length > 0) {
+        // 优先使用筛选后的store数据，如果没有则使用测试数据
+        if (filteredTasks.value && filteredTasks.value.length > 0) {
+          const data = {
+            data: filteredTasks.value,
+            links: []
+          }
+          gantt.parse(data)
+          console.log('使用筛选后的store数据，任务数量:', filteredTasks.value.length)
+        } else if (ganttTasks.value && ganttTasks.value.length > 0) {
           const data = {
             data: ganttTasks.value,
             links: []
           }
           gantt.parse(data)
-          console.log('使用store数据，任务数量:', ganttTasks.value.length)
+          console.log('使用完整store数据，任务数量:', ganttTasks.value.length)
         } else {
           gantt.parse(testData)
           console.log('使用默认测试数据')
@@ -206,8 +213,8 @@ const debouncedUpdate = (tasks: any[]) => {
   }, 300) // 300ms防抖
 }
 
-// 监听ganttTasks数据变化
-watch(ganttTasks, (newTasks) => {
+// 监听filteredTasks数据变化（筛选后的数据）
+watch(filteredTasks, (newTasks) => {
   if (!newTasks) return
   
   // 创建当前数据的快照用于比较
@@ -219,11 +226,17 @@ watch(ganttTasks, (newTasks) => {
   
   // 只有在数据真正变化时才更新
   if (currentSnapshot !== lastTasksSnapshot) {
-    console.log('检测到ganttTasks数据变化')
+    console.log('检测到筛选数据变化，新任务数量:', newTasks.length)
     lastTasksSnapshot = currentSnapshot
     
     if (newTasks.length > 0) {
       debouncedUpdate(newTasks)
+    } else {
+      // 筛选结果为空时，清空甘特图
+      console.log('筛选结果为空，清空甘特图')
+      if (isInitialized.value) {
+        gantt.clearAll()
+      }
     }
   }
 }, { immediate: false })
