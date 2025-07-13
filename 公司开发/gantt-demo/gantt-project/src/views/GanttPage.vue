@@ -24,6 +24,16 @@
     </div>
 
     <div class="gantt-content">
+      <!-- 视图状态指示 -->
+      <div class="view-indicator">
+        <a-tag :color="viewType === 'iteration' ? 'blue' : 'purple'" size="large">
+          {{ viewType === 'iteration' ? '当前视图：人员 → 版本迭代' : '当前视图：人员 → 需求 → 任务' }}
+        </a-tag>
+        <a-tag v-if="ganttStore.ganttTasks.length > 0" color="green">
+          数据项: {{ ganttStore.ganttTasks.length }}
+        </a-tag>
+      </div>
+      
       <BasicGantt />
       <!-- <TestComponent /> -->
       <!-- <SimpleGantt /> -->
@@ -44,10 +54,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ReloadOutlined } from '@ant-design/icons-vue'
 import { useGanttStore } from '@/stores/gantt'
 import { useFilterStore } from '@/stores/filter'
+import { storeToRefs } from 'pinia'
 import TestComponent from '@/components/TestComponent.vue'
 import BasicGantt from '@/components/gantt/BasicGantt.vue'
 // import SimpleGantt from '@/components/gantt/SimpleGantt.vue'
@@ -61,9 +72,10 @@ import type { ViewType } from '@/types'
 
 const ganttStore = useGanttStore()
 const filterStore = useFilterStore()
+const { config } = storeToRefs(ganttStore)
 
-// 响应式数据
-const viewType = ref<ViewType>('iteration')
+// 响应式数据 - 与store同步
+const viewType = ref<ViewType>(config.value.viewType)
 const detailModalVisible = ref(false)
 const personModalVisible = ref(false)
 const selectedIterationId = ref<string>('')
@@ -72,7 +84,13 @@ const selectedPersonId = ref<string>('')
 // 方法
 const handleViewChange = (e: any) => {
   const newViewType = e.target.value as ViewType
+  console.log('视图切换到:', newViewType)
+  
+  // 更新store中的viewType，这会触发数据转换
   ganttStore.setViewType(newViewType)
+  
+  // 同步本地viewType
+  viewType.value = newViewType
 }
 
 const refreshData = async () => {
@@ -81,14 +99,31 @@ const refreshData = async () => {
     console.log('开始加载测试数据...')
     const testData = getSimpleTestData()
     console.log('测试数据加载完成:', testData)
+    
+    // 设置原始数据，这会触发数据转换
     ganttStore.setRawData(testData)
+    
+    // 确保视图类型与store同步
+    if (config.value.viewType !== viewType.value) {
+      ganttStore.setViewType(viewType.value)
+    }
+    
     console.log('甘特图任务数据:', ganttStore.ganttTasks)
+    console.log('当前视图类型:', config.value.viewType)
   } catch (error) {
     console.error('加载数据失败:', error)
   } finally {
     ganttStore.loading = false
   }
 }
+
+// 监听store中viewType的变化，保持同步
+watch(() => config.value.viewType, (newViewType) => {
+  if (viewType.value !== newViewType) {
+    console.log('store中viewType变化:', newViewType)
+    viewType.value = newViewType
+  }
+})
 
 // 生命周期
 onMounted(() => {
@@ -135,5 +170,16 @@ onMounted(() => {
   flex: 1;
   padding: 16px;
   overflow: hidden;
+  
+  .view-indicator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
 }
 </style>
