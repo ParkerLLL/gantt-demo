@@ -10,6 +10,15 @@ import { gantt } from 'dhtmlx-gantt'
 import { useGanttStore } from '@/stores/gantt'
 import { storeToRefs } from 'pinia'
 
+// 定义事件
+interface Emits {
+  (e: 'task-click', data: { id: string, type: string, workItemType?: string }): void
+  (e: 'iteration-click', iterationId: string): void
+  (e: 'person-click', personId: string): void
+}
+
+const emit = defineEmits<Emits>()
+
 const ganttContainer = ref<HTMLElement>()
 const ganttStore = useGanttStore()
 const { config, ganttTasks, filteredTasks } = storeToRefs(ganttStore)
@@ -148,6 +157,9 @@ onMounted(() => {
           { unit: 'day', step: 1, format: '%d日' }
         ]
         
+        // 设置事件处理器
+        setupEventHandlers()
+        
         // 初始化
         gantt.init(ganttContainer.value)
         
@@ -240,6 +252,57 @@ watch(filteredTasks, (newTasks) => {
     }
   }
 }, { immediate: false })
+
+// 设置事件处理器
+const setupEventHandlers = () => {
+  // 任务点击事件
+  gantt.attachEvent('onTaskClick', (id: string, e: Event) => {
+    console.log('任务点击:', id)
+    
+    const task = gantt.getTask(id)
+    console.log('点击的任务:', task)
+    
+    if (task) {
+      // 发射通用任务点击事件
+      emit('task-click', {
+        id: task.id,
+        type: task.type || 'task',
+        workItemType: task.workItemType
+      })
+      
+      // 根据任务类型发射特定事件
+      if (task.type === 'project') {
+        // 人员节点点击
+        emit('person-click', task.personId || task.id)
+      } else if (task.workItemType === 'iteration') {
+        // 版本迭代点击
+        emit('iteration-click', task.id)
+      } else if (task.workItemType === 'requirement') {
+        // 需求点击 - 暂时也打开版本详情
+        emit('iteration-click', task.id)
+      } else if (task.workItemType === 'task') {
+        // 任务点击 - 暂时也打开版本详情
+        emit('iteration-click', task.id)
+      }
+    }
+    
+    return true // 允许默认行为
+  })
+
+  // 任务双击事件
+  gantt.attachEvent('onTaskDblClick', (id: string, e: Event) => {
+    console.log('任务双击:', id)
+    return false // 阻止默认的编辑行为
+  })
+
+  // 右键点击事件（可以用于上下文菜单）
+  gantt.attachEvent('onTaskRowClick', (id: string, row: any) => {
+    console.log('任务行点击:', id, row)
+    return true
+  })
+
+  console.log('甘特图事件处理器已设置')
+}
 
 onUnmounted(() => {
   // 清理定时器

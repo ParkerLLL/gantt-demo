@@ -40,7 +40,11 @@
         </a-tag>
       </div>
       
-      <BasicGantt />
+      <BasicGantt 
+        @iteration-click="handleIterationClick"
+        @person-click="handlePersonClick"
+        @task-click="handleTaskClick"
+      />
       <!-- <TestComponent /> -->
       <!-- <SimpleGantt /> -->
       <!-- <GanttChart /> -->
@@ -55,6 +59,7 @@
     <PersonRoleModal 
       v-model:open="personModalVisible" 
       :person-id="selectedPersonId"
+      @view-iteration="handleIterationClick"
     />
   </div>
 </template>
@@ -133,6 +138,27 @@ watch(() => config.value.viewType, (newViewType) => {
     viewType.value = newViewType
   }
 })
+
+// 甘特图点击事件处理
+const handleIterationClick = (iterationId: string) => {
+  console.log('打开版本迭代详情:', iterationId)
+  selectedIterationId.value = iterationId
+  detailModalVisible.value = true
+}
+
+const handlePersonClick = (personId: string) => {
+  console.log('打开人员角色详情:', personId)
+  selectedPersonId.value = personId
+  personModalVisible.value = true
+}
+
+const handleTaskClick = (data: { id: string, type: string, workItemType?: string }) => {
+  console.log('任务点击:', data)
+  // 可以根据workItemType进行不同的处理
+  if (data.workItemType === 'iteration') {
+    handleIterationClick(data.id)
+  }
+}
 
 // 生命周期
 onMounted(() => {
