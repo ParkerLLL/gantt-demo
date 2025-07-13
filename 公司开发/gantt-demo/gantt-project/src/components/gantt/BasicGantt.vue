@@ -151,9 +151,18 @@ onMounted(() => {
         // 初始化
         gantt.init(ganttContainer.value)
         
-        // 暂时只使用测试数据，避免循环问题
-        gantt.parse(testData)
-        console.log('使用固定测试数据')
+        // 优先使用store数据，如果没有则使用测试数据
+        if (ganttTasks.value && ganttTasks.value.length > 0) {
+          const data = {
+            data: ganttTasks.value,
+            links: []
+          }
+          gantt.parse(data)
+          console.log('使用store数据，任务数量:', ganttTasks.value.length)
+        } else {
+          gantt.parse(testData)
+          console.log('使用默认测试数据')
+        }
         
         console.log('基础甘特图初始化完成')
         isInitialized.value = true
@@ -164,10 +173,69 @@ onMounted(() => {
   })
 })
 
-// 暂时移除watch监听器，避免循环问题
-// TODO: 后续需要实现更安全的数据监听机制
+// 安全的数据监听机制 - 使用防抖和精确的变化检测
+let updateTimer: NodeJS.Timeout | null = null
+let lastTasksSnapshot = ''
+
+const updateGanttData = (tasks: any[]) => {
+  if (!isInitialized.value || !ganttContainer.value) return
+  
+  try {
+    console.log('更新甘特图数据，任务数量:', tasks.length)
+    const data = {
+      data: tasks,
+      links: []
+    }
+    gantt.clearAll()
+    gantt.parse(data)
+    console.log('甘特图数据更新完成')
+  } catch (error) {
+    console.error('甘特图数据更新失败:', error)
+  }
+}
+
+// 防抖的数据更新函数
+const debouncedUpdate = (tasks: any[]) => {
+  if (updateTimer) {
+    clearTimeout(updateTimer)
+  }
+  
+  updateTimer = setTimeout(() => {
+    updateGanttData(tasks)
+    updateTimer = null
+  }, 300) // 300ms防抖
+}
+
+// 监听ganttTasks数据变化
+watch(ganttTasks, (newTasks) => {
+  if (!newTasks) return
+  
+  // 创建当前数据的快照用于比较
+  const currentSnapshot = JSON.stringify(newTasks.map(task => ({ 
+    id: task.id, 
+    text: task.text, 
+    parent: task.parent 
+  })))
+  
+  // 只有在数据真正变化时才更新
+  if (currentSnapshot !== lastTasksSnapshot) {
+    console.log('检测到ganttTasks数据变化')
+    lastTasksSnapshot = currentSnapshot
+    
+    if (newTasks.length > 0) {
+      debouncedUpdate(newTasks)
+    }
+  }
+}, { immediate: false })
 
 onUnmounted(() => {
+  // 清理定时器
+  if (updateTimer) {
+    clearTimeout(updateTimer)
+    updateTimer = null
+  }
+  
+  // 销毁甘特图实例
   if (gantt && typeof gantt.destructor === 'function') {
     gantt.destructor()
   }
