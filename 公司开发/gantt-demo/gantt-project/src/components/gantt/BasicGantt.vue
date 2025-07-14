@@ -1,6 +1,23 @@
 <template>
   <div class="basic-gantt-wrapper">
-    <div ref="ganttContainer" class="basic-gantt"></div>
+    <!-- 加载状态 -->
+    <div v-if="!isInitialized" class="gantt-loading">
+      <a-spin size="large" tip="初始化甘特图...">
+        <div class="loading-placeholder"></div>
+      </a-spin>
+    </div>
+    
+    <!-- 甘特图容器 -->
+    <div 
+      ref="ganttContainer" 
+      class="basic-gantt"
+      :class="{ 'gantt-hidden': !isInitialized }"
+    ></div>
+    
+    <!-- 数据为空时的提示 -->
+    <div v-if="isInitialized && filteredTasks.length === 0" class="gantt-empty">
+      <a-empty description="暂无数据" />
+    </div>
   </div>
 </template>
 
@@ -127,12 +144,22 @@ const setTimeScale = (scale: string) => {
   }
 }
 
-// 监听时间刻度变化
+// 监听时间刻度变化 - 添加防抖避免频繁切换
+let scaleUpdateTimer: NodeJS.Timeout | null = null
+
 watch(() => config.value.timeScale, (newScale) => {
   console.log('监听到时间刻度变化:', newScale)
-  if (ganttContainer.value && newScale) {
-    setTimeScale(newScale)
+  
+  if (scaleUpdateTimer) {
+    clearTimeout(scaleUpdateTimer)
   }
+  
+  scaleUpdateTimer = setTimeout(() => {
+    if (ganttContainer.value && newScale && isInitialized.value) {
+      setTimeScale(newScale)
+    }
+    scaleUpdateTimer = null
+  }, 100) // 100ms防抖
 })
 
 onMounted(() => {
@@ -305,10 +332,15 @@ const setupEventHandlers = () => {
 }
 
 onUnmounted(() => {
-  // 清理定时器
+  // 清理所有定时器
   if (updateTimer) {
     clearTimeout(updateTimer)
     updateTimer = null
+  }
+  
+  if (scaleUpdateTimer) {
+    clearTimeout(scaleUpdateTimer)
+    scaleUpdateTimer = null
   }
   
   // 销毁甘特图实例
@@ -320,15 +352,88 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .basic-gantt-wrapper {
+  position: relative;
   width: 100%;
   height: 500px;
   border: 1px solid #e8e8e8;
   border-radius: 6px;
   overflow: hidden;
+  background: white;
+  
+  @media (max-width: 768px) {
+    height: 450px;
+  }
+  
+  @media (max-width: 480px) {
+    height: 400px;
+    border-radius: 4px;
+  }
+
+  .gantt-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 10;
+    
+    .loading-placeholder {
+      width: 200px;
+      height: 100px;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+  }
 
   .basic-gantt {
     width: 100%;
     height: 100%;
+    transition: opacity 0.3s ease;
+    
+    &.gantt-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
   }
+  
+  .gantt-empty {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    z-index: 5;
+  }
+}
+
+// 甘特图样式优化
+:deep(.gantt_tree_content) {
+  font-size: 13px;
+  color: #262626;
+}
+
+:deep(.gantt_task_line) {
+  border-radius: 4px;
+}
+
+:deep(.gantt_task_progress) {
+  border-radius: 4px;
+}
+
+:deep(.gantt_grid_scale) {
+  background: #fafafa;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+:deep(.gantt_scale_line) {
+  border-bottom: 1px solid #e8e8e8;
 }
 </style>

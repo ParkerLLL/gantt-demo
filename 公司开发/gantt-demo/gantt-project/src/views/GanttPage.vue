@@ -182,15 +182,30 @@ onMounted(() => {
   background: white;
   border-bottom: 1px solid #e8e8e8;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  flex-wrap: wrap;
+  gap: 16px;
 
   .header-left {
     display: flex;
     align-items: center;
     gap: 24px;
+    flex-wrap: wrap;
 
     h2 {
       margin: 0;
       color: #262626;
+      font-size: 18px;
+      
+      @media (max-width: 768px) {
+        font-size: 16px;
+      }
+    }
+    
+    .view-switcher {
+      @media (max-width: 640px) {
+        order: 2;
+        flex-basis: 100%;
+      }
     }
   }
 
@@ -198,6 +213,16 @@ onMounted(() => {
     display: flex;
     align-items: center;
     gap: 16px;
+    flex-wrap: wrap;
+    
+    @media (max-width: 768px) {
+      gap: 12px;
+    }
+    
+    @media (max-width: 640px) {
+      flex-basis: 100%;
+      justify-content: space-between;
+    }
   }
 }
 
@@ -205,6 +230,14 @@ onMounted(() => {
   flex: 1;
   padding: 16px;
   overflow: hidden;
+  
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px;
+  }
   
   .view-indicator {
     display: flex;
@@ -215,6 +248,19 @@ onMounted(() => {
     background: white;
     border-radius: 6px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    flex-wrap: wrap;
+    
+    @media (max-width: 768px) {
+      gap: 8px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+    
+    @media (max-width: 480px) {
+      gap: 6px;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+    }
   }
 }
 </style>
