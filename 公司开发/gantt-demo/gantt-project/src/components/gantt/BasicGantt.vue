@@ -41,6 +41,41 @@ const ganttStore = useGanttStore()
 const { config, ganttTasks, filteredTasks } = storeToRefs(ganttStore)
 const isInitialized = ref(false)
 
+// 详情按钮点击处理函数
+const handleContainerClick = (e: Event) => {
+  const target = e.target as HTMLElement
+  
+  // 检查是否点击了详情按钮
+  if (target.classList.contains('gantt-detail-btn') || target.closest('.gantt-detail-btn')) {
+    e.stopPropagation() // 阻止事件冒泡到甘特图的默认点击处理
+    
+    const button = target.classList.contains('gantt-detail-btn') 
+      ? target 
+      : target.closest('.gantt-detail-btn') as HTMLElement
+    
+    const taskId = button.getAttribute('data-id')
+    const personId = button.getAttribute('data-person-id')
+    const taskType = button.getAttribute('data-type')
+    
+    console.log('详情按钮点击:', { taskId, personId, taskType })
+    
+    if (button.classList.contains('gantt-person-btn')) {
+      // 人员详情按钮
+      emit('person-click', personId || taskId)
+    } else if (button.classList.contains('gantt-iteration-btn')) {
+      // 版本迭代详情按钮
+      emit('iteration-click', taskId)
+    } else if (button.classList.contains('gantt-task-btn')) {
+      // 其他任务详情按钮
+      emit('task-click', {
+        id: taskId,
+        type: 'task',
+        workItemType: taskType
+      })
+    }
+  }
+}
+
 // 简单的测试数据
 const testData = {
   data: [
@@ -174,11 +209,38 @@ onMounted(() => {
         // 基础配置
         gantt.config.date_format = '%Y-%m-%d'
         gantt.config.columns = [
-          { name: 'text', label: '任务名称', tree: true, width: 200 },
-          { name: 'start_date', label: '开始时间', align: 'center', width: 100 },
-          { name: 'end_date', label: '结束时间', align: 'center', width: 100 }
+          { name: 'text', label: '任务名称', tree: true, width: 180 },
+          { name: 'start_date', label: '开始时间', align: 'center', width: 90 },
+          { name: 'end_date', label: '结束时间', align: 'center', width: 90 },
+          { 
+            name: 'action', 
+            label: '操作', 
+            align: 'center', 
+            width: 80,
+            template: function(task: any) {
+              if (task.type === 'project') {
+                // 人员节点显示人员详情按钮
+                return `<button class="gantt-detail-btn gantt-person-btn" data-id="${task.id}" data-person-id="${task.personId || task.id}">
+                  <span class="btn-icon">👤</span>
+                  <span class="btn-text">详情</span>
+                </button>`
+              } else if (task.workItemType === 'iteration') {
+                // 版本迭代显示版本详情按钮
+                return `<button class="gantt-detail-btn gantt-iteration-btn" data-id="${task.id}">
+                  <span class="btn-icon">📋</span>
+                  <span class="btn-text">详情</span>
+                </button>`
+              } else {
+                // 其他工作项显示通用详情按钮
+                return `<button class="gantt-detail-btn gantt-task-btn" data-id="${task.id}" data-type="${task.workItemType}">
+                  <span class="btn-icon">📄</span>
+                  <span class="btn-text">详情</span>
+                </button>`
+              }
+            }
+          }
         ]
-        gantt.config.grid_width = 400
+        gantt.config.grid_width = 440
         gantt.config.readonly = true
         
         // 自定义任务模板，为人员节点添加特殊样式类
@@ -293,50 +355,21 @@ watch(filteredTasks, (newTasks) => {
 
 // 设置事件处理器
 const setupEventHandlers = () => {
-  // 任务点击事件
-  gantt.attachEvent('onTaskClick', (id: string, e: Event) => {
-    console.log('任务点击:', id)
-    
-    const task = gantt.getTask(id)
-    console.log('点击的任务:', task)
-    
-    if (task) {
-      // 发射通用任务点击事件
-      emit('task-click', {
-        id: task.id,
-        type: task.type || 'task',
-        workItemType: task.workItemType
-      })
-      
-      // 根据任务类型发射特定事件
-      if (task.type === 'project') {
-        // 人员节点点击
-        emit('person-click', task.personId || task.id)
-      } else if (task.workItemType === 'iteration') {
-        // 版本迭代点击
-        emit('iteration-click', task.id)
-      } else if (task.workItemType === 'requirement') {
-        // 需求点击 - 暂时也打开版本详情
-        emit('iteration-click', task.id)
-      } else if (task.workItemType === 'task') {
-        // 任务点击 - 暂时也打开版本详情
-        emit('iteration-click', task.id)
-      }
-    }
-    
-    return true // 允许默认行为
+  // 添加容器点击监听器
+  if (ganttContainer.value) {
+    ganttContainer.value.addEventListener('click', handleContainerClick)
+  }
+
+  // 保留任务行点击事件用于展开/收起（但不触发详情弹窗）
+  gantt.attachEvent('onTaskRowClick', (id: string, row: any) => {
+    console.log('任务行点击（展开/收起）:', id)
+    return true // 允许默认的展开/收起行为
   })
 
   // 任务双击事件
   gantt.attachEvent('onTaskDblClick', (id: string, e: Event) => {
     console.log('任务双击:', id)
     return false // 阻止默认的编辑行为
-  })
-
-  // 右键点击事件（可以用于上下文菜单）
-  gantt.attachEvent('onTaskRowClick', (id: string, row: any) => {
-    console.log('任务行点击:', id, row)
-    return true
   })
 
   console.log('甘特图事件处理器已设置')
@@ -352,6 +385,11 @@ onUnmounted(() => {
   if (scaleUpdateTimer) {
     clearTimeout(scaleUpdateTimer)
     scaleUpdateTimer = null
+  }
+  
+  // 清理事件监听器
+  if (ganttContainer.value) {
+    ganttContainer.value.removeEventListener('click', handleContainerClick)
   }
   
   // 销毁甘特图实例
@@ -459,5 +497,77 @@ onUnmounted(() => {
 
 :deep(.gantt_bar_task.gantt_project_task) {
   display: none !important;
+}
+
+// 详情按钮样式
+:deep(.gantt-detail-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #f0f9ff;
+  border: 1px solid #bae7ff;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #1890ff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+  
+  &:hover {
+    background: #e6f7ff;
+    border-color: #91d5ff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(24, 144, 255, 0.2);
+  }
+  
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(24, 144, 255, 0.3);
+  }
+  
+  .btn-icon {
+    font-size: 10px;
+    line-height: 1;
+  }
+  
+  .btn-text {
+    font-weight: 500;
+    white-space: nowrap;
+  }
+}
+
+// 不同类型按钮的颜色变化
+:deep(.gantt-person-btn) {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+  color: #52c41a;
+  
+  &:hover {
+    background: #f0fff0;
+    border-color: #95de64;
+  }
+}
+
+:deep(.gantt-iteration-btn) {
+  background: #f9f0ff;
+  border-color: #d3adf7;
+  color: #722ed1;
+  
+  &:hover {
+    background: #f0e6ff;
+    border-color: #b37feb;
+  }
+}
+
+:deep(.gantt-task-btn) {
+  background: #fff7e6;
+  border-color: #ffd591;
+  color: #fa8c16;
+  
+  &:hover {
+    background: #fff2e6;
+    border-color: #ffb366;
+  }
 }
 </style>
