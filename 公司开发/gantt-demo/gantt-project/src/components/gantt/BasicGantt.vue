@@ -181,6 +181,14 @@ onMounted(() => {
         gantt.config.grid_width = 400
         gantt.config.readonly = true
         
+        // 自定义任务模板，为人员节点添加特殊样式类
+        gantt.templates.task_class = function(start, end, task) {
+          if (task.type === 'project' || task.workItemType === 'person') {
+            return 'gantt_project_task'
+          }
+          return ''
+        }
+        
         // 初始时间刻度
         gantt.config.scales = [
           { unit: 'month', step: 1, format: '%Y年%m月' },
@@ -438,5 +446,18 @@ onUnmounted(() => {
 
 :deep(.gantt_scale_line) {
   border-bottom: 1px solid #e8e8e8;
+}
+
+// 隐藏人员层级（project类型）的甘特图横条
+:deep(.gantt_project_task) {
+  display: none !important;
+}
+
+:deep(.gantt_task_line.gantt_project_task) {
+  display: none !important;
+}
+
+:deep(.gantt_bar_task.gantt_project_task) {
+  display: none !important;
 }
 </style>
