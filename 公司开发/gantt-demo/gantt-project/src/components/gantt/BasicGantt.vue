@@ -109,7 +109,10 @@ const setTimeScale = (scale: string) => {
       case 'quarter':
         gantt.config.scales = [
           { unit: 'year', step: 1, format: '%Y年' },
-          { unit: 'quarter', step: 1, format: 'Q%q' }
+          { unit: 'quarter', step: 1, format: function(date) {
+            const quarter = Math.floor(date.getMonth() / 3) + 1
+            return 'Q' + quarter
+          }}
         ]
         break
       case 'month':
