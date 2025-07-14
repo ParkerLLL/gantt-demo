@@ -176,9 +176,9 @@ onMounted(() => {
         gantt.config.columns = [
           { name: 'text', label: '任务名称', tree: true, width: 200 },
           { name: 'start_date', label: '开始时间', align: 'center', width: 100 },
-          { name: 'duration', label: '工期', align: 'center', width: 80 }
+          { name: 'end_date', label: '结束时间', align: 'center', width: 100 }
         ]
-        gantt.config.grid_width = 380
+        gantt.config.grid_width = 400
         gantt.config.readonly = true
         
         // 初始时间刻度
