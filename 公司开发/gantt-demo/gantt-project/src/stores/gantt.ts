@@ -10,6 +10,37 @@ import type {
   GanttConfig
 } from '@/types'
 
+// 帮助函数 - 计算天数
+function calculateDuration(start: string, end: string): number {
+  const startDate = new Date(start)
+  const endDate = new Date(end)
+  const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+}
+
+// 帮助函数 - 计算进度
+function calculateProgress(item: { totalWorkItems?: number, completedWorkItems?: number }): number {
+  if (item.totalWorkItems && item.totalWorkItems > 0) {
+    return (item.completedWorkItems || 0) / item.totalWorkItems
+  }
+  return 0
+}
+
+// 帮助函数 - 获取状态颜色
+function getStatusColor(status: string): string {
+  const colorMap: Record<string, string> = {
+    'planning': '#5DADE2',
+    'active': '#58D68D',
+    'completed': '#AAB7B8',
+    'cancelled': '#EC7063',
+    'pending': '#F4D03F',
+    'in_progress': '#5DADE2',
+    'testing': '#AF7AC5',
+    'rejected': '#EC7063',
+  }
+  return colorMap[status] || '#AAB7B8'
+}
+
 export const useGanttStore = defineStore('gantt', () => {
   // 状态
   const config = ref<GanttConfig>({
@@ -17,7 +48,20 @@ export const useGanttStore = defineStore('gantt', () => {
     timeScale: 'month',
     filters: {},
     showWeekends: false,
-    showCriticalPath: false
+    showCriticalPath: false,
+    expandAll: false,
+    pagination: {
+      current: 1,
+      pageSize: 50,
+      total: 0,
+      showSizeChanger: true,
+      showQuickJumper: true
+    },
+    lazyLoad: {
+      expandedNodes: new Set<string>(),
+      loadedPersons: new Set<string>(),
+      maxItemsPerPerson: 10
+    }
   })
 
   const rawData = ref<{

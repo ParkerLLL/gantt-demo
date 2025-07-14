@@ -72,17 +72,19 @@ const handleContainerClick = (e: Event) => {
     
     if (button.classList.contains('gantt-person-btn')) {
       // 人员详情按钮
-      emit('person-click', personId || taskId)
+      if (personId) emit('person-click', personId)
     } else if (button.classList.contains('gantt-iteration-btn')) {
       // 版本迭代详情按钮
-      emit('iteration-click', taskId)
+      if (taskId) emit('iteration-click', taskId)
     } else if (button.classList.contains('gantt-task-btn')) {
       // 其他任务详情按钮
-      emit('task-click', {
-        id: taskId,
-        type: 'task',
-        workItemType: taskType
-      })
+      if (taskId) {
+        emit('task-click', {
+          id: taskId,
+          type: 'task',
+          workItemType: taskType || undefined
+        })
+      }
     }
   }
 }
@@ -137,8 +139,10 @@ const testData = {
 // 配置时间轴样式 (节假日和周末)
 const setupTimeAxisStyles = () => {
   // 自定义时间轴单元格样式
+  // @ts-ignore
   gantt.templates.scale_cell_class = function(date: Date) {
     const dayOfWeek = date.getDay()
+    // @ts-ignore
     const dateStr = gantt.date.date_to_str('%Y-%m-%d')(date)
     
     // 节假日优先级最高
@@ -155,8 +159,10 @@ const setupTimeAxisStyles = () => {
   }
   
   // 自定义任务区域背景样式 (对应时间轴)
+  // @ts-ignore
   gantt.templates.timeline_cell_class = function(task: any, date: Date) {
     const dayOfWeek = date.getDay()
+    // @ts-ignore
     const dateStr = gantt.date.date_to_str('%Y-%m-%d')(date)
     
     // 节假日优先级最高
@@ -179,12 +185,16 @@ const setTimeScale = (scale: string) => {
   
   try {
     // 清除现有的刻度配置
+    // @ts-ignore
     delete gantt.config.scale_unit
+    // @ts-ignore
     delete gantt.config.date_scale
+    // @ts-ignore
     delete gantt.config.subscales
     
     // 重置scale_height和min_column_width到默认值
     gantt.config.scale_height = 45
+    // @ts-ignore
     gantt.config.min_column_width = 50
     
     // 设置新的刻度配置
@@ -198,7 +208,7 @@ const setTimeScale = (scale: string) => {
       case 'quarter':
         gantt.config.scales = [
           { unit: 'year', step: 1, format: '%Y年' },
-          { unit: 'quarter', step: 1, format: function(date) {
+          { unit: 'quarter', step: 1, format: function(date: Date) {
             const quarter = Math.floor(date.getMonth() / 3) + 1
             return 'Q' + quarter
           }}
@@ -223,6 +233,7 @@ const setTimeScale = (scale: string) => {
         ]
         // 日期刻度特殊配置
         gantt.config.scale_height = 60
+        // @ts-ignore
         gantt.config.min_column_width = 35
         break
       default:
