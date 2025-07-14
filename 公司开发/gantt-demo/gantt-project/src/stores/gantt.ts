@@ -40,16 +40,20 @@ export const useGanttStore = defineStore('gantt', () => {
   })
 
   const filteredTasks = computed(() => {
-    return ganttTasks.value.filter((task: GanttTask) => {
+    if (!config.value.filters || Object.keys(config.value.filters).length === 0) {
+      return ganttTasks.value
+    }
+    
+    const filtered = ganttTasks.value.filter((task: GanttTask) => {
       const filters = config.value.filters
       
-      // 部门筛选
-      if (filters.department && !task.personName.includes(filters.department)) {
+      // 项目筛选 - 检查任务名称是否包含项目关键词
+      if (filters.project && !task.text.toLowerCase().includes(filters.project.toLowerCase())) {
         return false
       }
       
-      // 项目筛选
-      if (filters.project && !task.text.includes(filters.project)) {
+      // 版本迭代筛选 - 仅对非人员节点生效
+      if (filters.iteration && task.type !== 'project' && !task.text.toLowerCase().includes(filters.iteration.toLowerCase())) {
         return false
       }
       
@@ -63,8 +67,25 @@ export const useGanttStore = defineStore('gantt', () => {
         return false
       }
       
+      // 空间类型筛选（基于工作项类型）
+      if (filters.spaceType) {
+        // 这里可以根据实际需求映射spaceType到workItemType
+        const spaceTypeMapping: Record<string, string[]> = {
+          'project': ['iteration', 'requirement'],
+          'product': ['requirement'],
+          'team': ['task']
+        }
+        const allowedTypes = spaceTypeMapping[filters.spaceType] || []
+        if (task.workItemType && !allowedTypes.includes(task.workItemType)) {
+          return false
+        }
+      }
+      
       return true
     })
+    
+    console.log(`筛选后任务数量: ${filtered.length}/${ganttTasks.value.length}`)
+    return filtered
   })
 
   // 操作方法
