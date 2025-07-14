@@ -192,6 +192,22 @@ export interface WorkItemDetail {
   requirementName?: string
 }
 
+// 分页配置
+export interface PaginationConfig {
+  current: number
+  pageSize: number
+  total: number
+  showSizeChanger: boolean
+  showQuickJumper: boolean
+}
+
+// 懒加载配置
+export interface LazyLoadConfig {
+  expandedNodes: Set<string>
+  loadedPersons: Set<string>
+  maxItemsPerPerson: number
+}
+
 // 甘特图配置
 export interface GanttConfig {
   viewType: ViewType
@@ -199,4 +215,11 @@ export interface GanttConfig {
   filters: FilterConfig
   showWeekends: boolean
   showCriticalPath: boolean
+  
+  // 分页配置
+  pagination: PaginationConfig
+  
+  // 展开配置
+  expandAll: boolean
+  lazyLoad: LazyLoadConfig
 }
