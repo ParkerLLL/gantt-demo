@@ -166,6 +166,32 @@ export interface IterationDetail {
   completedWorkItems: number
 }
 
+// 工作项详情
+export interface WorkItemDetail {
+  id: string
+  number: string
+  title: string
+  workItemType: WorkItemType
+  status: string
+  createTime: string
+  lastChangeTime: string
+  creator: Person
+  developer?: Person
+  tester?: Person
+  productManager?: Person
+  assignees: Person[]
+  url?: string
+  description?: string
+  priority?: string
+  spaceType?: SpaceType
+  spaceName?: string
+  projectName?: string
+  iterationId?: string
+  iterationName?: string
+  requirementId?: string
+  requirementName?: string
+}
+
 // 甘特图配置
 export interface GanttConfig {
   viewType: ViewType

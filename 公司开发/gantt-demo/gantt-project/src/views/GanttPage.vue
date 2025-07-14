@@ -61,6 +61,11 @@
       :person-id="selectedPersonId"
       @view-iteration="handleIterationClick"
     />
+    
+    <WorkItemDetailModal 
+      v-model:open="workItemModalVisible" 
+      :work-item-id="selectedWorkItemId"
+    />
   </div>
 </template>
 
@@ -78,6 +83,7 @@ import FilterPanel from '@/components/filter/FilterPanel.vue'
 import TimeScaleController from '@/components/gantt/TimeScaleController.vue'
 import IterationDetailModal from '@/components/modal/IterationDetailModal.vue'
 import PersonRoleModal from '@/components/modal/PersonRoleModal.vue'
+import WorkItemDetailModal from '@/components/modal/WorkItemDetailModal.vue'
 import { getSimpleTestData } from '@/mock/simple-data'
 import type { ViewType } from '@/types'
 
@@ -89,8 +95,10 @@ const { config } = storeToRefs(ganttStore)
 const viewType = ref<ViewType>(config.value.viewType)
 const detailModalVisible = ref(false)
 const personModalVisible = ref(false)
+const workItemModalVisible = ref(false)
 const selectedIterationId = ref<string>('')
 const selectedPersonId = ref<string>('')
+const selectedWorkItemId = ref<string>('')
 
 // 方法
 const handleViewChange = (e: any) => {
@@ -157,7 +165,16 @@ const handleTaskClick = (data: { id: string, type: string, workItemType?: string
   // 可以根据workItemType进行不同的处理
   if (data.workItemType === 'iteration') {
     handleIterationClick(data.id)
+  } else {
+    // 其他工作项类型显示工作项详情
+    handleWorkItemClick(data.id)
   }
+}
+
+const handleWorkItemClick = (workItemId: string) => {
+  console.log('打开工作项详情:', workItemId)
+  selectedWorkItemId.value = workItemId
+  workItemModalVisible.value = true
 }
 
 // 生命周期
