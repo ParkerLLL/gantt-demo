@@ -41,6 +41,17 @@ const ganttStore = useGanttStore()
 const { config, ganttTasks, filteredTasks } = storeToRefs(ganttStore)
 const isInitialized = ref(false)
 
+// 中国法定节假日配置 (2024年)
+const holidays = [
+  '2024-01-01', // 元旦
+  '2024-02-10', '2024-02-11', '2024-02-12', '2024-02-13', '2024-02-14', '2024-02-15', '2024-02-16', '2024-02-17', // 春节
+  '2024-04-04', '2024-04-05', '2024-04-06', // 清明节  
+  '2024-05-01', '2024-05-02', '2024-05-03', // 劳动节
+  '2024-06-10', // 端午节
+  '2024-09-15', '2024-09-16', '2024-09-17', // 中秋节
+  '2024-10-01', '2024-10-02', '2024-10-03', '2024-10-04', '2024-10-05', '2024-10-06', '2024-10-07', // 国庆节
+]
+
 // 详情按钮点击处理函数
 const handleContainerClick = (e: Event) => {
   const target = e.target as HTMLElement
@@ -123,6 +134,45 @@ const testData = {
   links: []
 }
 
+// 配置时间轴样式 (节假日和周末)
+const setupTimeAxisStyles = () => {
+  // 自定义时间轴单元格样式
+  gantt.templates.scale_cell_class = function(date: Date) {
+    const dayOfWeek = date.getDay()
+    const dateStr = gantt.date.date_to_str('%Y-%m-%d')(date)
+    
+    // 节假日优先级最高
+    if (holidays.includes(dateStr)) {
+      return 'holiday-cell'
+    }
+    
+    // 周末 (周六=6, 周日=0) 
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return 'weekend-cell'
+    }
+    
+    return ''
+  }
+  
+  // 自定义任务区域背景样式 (对应时间轴)
+  gantt.templates.timeline_cell_class = function(task: any, date: Date) {
+    const dayOfWeek = date.getDay()
+    const dateStr = gantt.date.date_to_str('%Y-%m-%d')(date)
+    
+    // 节假日优先级最高
+    if (holidays.includes(dateStr)) {
+      return 'holiday-timeline-cell'
+    }
+    
+    // 周末
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return 'weekend-timeline-cell'
+    }
+    
+    return ''
+  }
+}
+
 // 设置时间刻度
 const setTimeScale = (scale: string) => {
   console.log('切换时间刻度到:', scale)
@@ -132,6 +182,10 @@ const setTimeScale = (scale: string) => {
     delete gantt.config.scale_unit
     delete gantt.config.date_scale
     delete gantt.config.subscales
+    
+    // 重置scale_height和min_column_width到默认值
+    gantt.config.scale_height = 45
+    gantt.config.min_column_width = 50
     
     // 设置新的刻度配置
     switch (scale) {
@@ -164,8 +218,12 @@ const setTimeScale = (scale: string) => {
         break
       case 'day':
         gantt.config.scales = [
-          { unit: 'day', step: 1, format: '%Y-%m-%d' }
+          { unit: 'month', step: 1, format: '%Y年%m月' },
+          { unit: 'day', step: 1, format: '%j' }
         ]
+        // 日期刻度特殊配置
+        gantt.config.scale_height = 60
+        gantt.config.min_column_width = 35
         break
       default:
         gantt.config.scales = [
@@ -259,6 +317,9 @@ onMounted(() => {
         
         // 设置事件处理器
         setupEventHandlers()
+        
+        // 设置时间轴样式
+        setupTimeAxisStyles()
         
         // 初始化
         gantt.init(ganttContainer.value)
@@ -535,6 +596,40 @@ onUnmounted(() => {
     font-weight: 500;
     white-space: nowrap;
   }
+}
+
+// 时间轴节假日和周末样式
+:deep(.weekend-cell) {
+  background-color: #f8f9fa !important;
+  color: #6c757d !important;
+  border-left: 1px solid #dee2e6 !important;
+}
+
+:deep(.holiday-cell) {
+  background-color: #fff3cd !important;
+  color: #856404 !important;
+  border-left: 1px solid #ffeaa7 !important;
+  font-weight: 500;
+}
+
+:deep(.special-date) {
+  color: inherit;
+  font-weight: 500;
+}
+
+// 日期刻度优化
+:deep(.gantt_scale_line) {
+  font-size: 12px;
+  text-align: center;
+}
+
+// 时间线区域节假日和周末样式
+:deep(.weekend-timeline-cell) {
+  background-color: #f8f9fa !important;
+}
+
+:deep(.holiday-timeline-cell) {
+  background-color: #fff3cd !important;
 }
 
 // 不同类型按钮的颜色变化
