@@ -59,40 +59,63 @@ watch(() => config.value.timeScale, (newScale) => {
 .time-scale-controller {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   
   .scale-label {
     font-size: 13px;
     color: #666;
     white-space: nowrap;
+    font-weight: 500;
   }
   
   :deep(.ant-radio-group) {
+    display: flex;
+    flex-direction: row;
+    
     .ant-radio-button-wrapper {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 4px;
-      padding: 0 10px;
-      height: 28px;
-      line-height: 26px;
+      padding: 0 8px;
+      height: 26px;
+      line-height: 24px;
       font-size: 12px;
-      transition: all 0.3s ease;
+      min-width: 50px;
+      transition: all 0.2s ease;
+      border-radius: 4px;
+      
+      &:first-child {
+        border-top-left-radius: 4px;
+        border-bottom-left-radius: 4px;
+      }
+      
+      &:last-child {
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
+      }
       
       &.ant-radio-button-wrapper-checked {
         background: #1890ff;
         border-color: #1890ff;
         color: white;
-        transform: scale(1.02);
-        box-shadow: 0 2px 4px rgba(24, 144, 255, 0.3);
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(24, 144, 255, 0.2);
       }
       
       &:hover:not(.ant-radio-button-wrapper-checked) {
         background: #f0f9ff;
         border-color: #91d5ff;
+        transform: translateY(-1px);
       }
       
       .anticon {
-        font-size: 12px;
+        font-size: 11px;
+        margin-right: 2px;
       }
     }
   }
